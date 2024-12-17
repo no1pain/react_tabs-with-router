@@ -3,15 +3,16 @@ import '@fortawesome/fontawesome-free/css/all.css';
 import './App.scss';
 import {
   Link,
-  BrowserRouter as Router,
   Routes,
   Route,
-  useLocation,
   useParams,
+  NavLink,
+  useLocation,
 } from 'react-router-dom';
 import { HomePage } from './components/HomePage';
 import { TabsPage } from './components/TabsPage';
 import { NotFoundPage } from './components/NotFoundPage';
+import { useEffect, useState } from 'react';
 
 const tabs = [
   { id: 'tab-1', title: 'Tab 1', content: 'Some text 1' },
@@ -19,9 +20,23 @@ const tabs = [
   { id: 'tab-3', title: 'Tab 3', content: 'Some text 3' },
 ];
 
+const NOT_SELECTED = 'Please select a tab';
+
 export const App = () => {
+  const { tabId } = useParams<{ tabId: string }>();
   const location = useLocation();
-  const tabId = useParams();
+  const [tabContent, setTabContent] = useState('Please select a tab');
+
+  useEffect(() => {
+    if (tabId) {
+      const activeTab = tabs.find(tab => tab.id === tabId);
+      if (activeTab) {
+        setTabContent(activeTab.content);
+      } else {
+        setTabContent(NOT_SELECTED);
+      }
+    }
+  }, [tabId]);
 
   return (
     <div>
@@ -31,12 +46,22 @@ export const App = () => {
       >
         <div className="container">
           <div className="navbar-brand">
-            <Link to="/" className="navbar-item is-active">
+            <NavLink
+              to="/"
+              className={({ isActive }) =>
+                isActive ? 'navbar-item is-active' : 'navbar-item'
+              }
+            >
               Home
-            </Link>
-            <Link to="/tabs" className="navbar-item">
+            </NavLink>
+            <NavLink
+              to="/tabs"
+              className={({ isActive }) =>
+                isActive ? 'navbar-item is-active' : 'navbar-item'
+              }
+            >
               Tabs
-            </Link>
+            </NavLink>
           </div>
         </div>
       </nav>
@@ -46,26 +71,28 @@ export const App = () => {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/tabs" element={<TabsPage />} />
+            <Route path="/tabs/:tabId" element={<TabsPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
 
-          {location.pathname === '/tabs' && (
+          {location.pathname.startsWith('/tabs') && (
             <>
               <div className="tabs is-boxed">
                 <ul>
-                  <li data-cy="Tab" className="is-active">
-                    <a href="#/">Tab 1</a>
-                  </li>
-                  <li data-cy="Tab">
-                    <a href="#/">Tab 2</a>
-                  </li>
-                  <li data-cy="Tab">
-                    <a href="#/">Tab 3</a>
-                  </li>
+                  {tabs.map(tab => (
+                    <li
+                      key={tab.id}
+                      className={tab.id === tabId ? 'is-active' : ''}
+                    >
+                      <Link to={`/tabs/${tab.id}`} data-cy="Tab">
+                        {tab.title}
+                      </Link>
+                    </li>
+                  ))}
                 </ul>
               </div>
               <div className="block" data-cy="TabContent">
-                Please select a tab
+                {tabContent}
               </div>
             </>
           )}
